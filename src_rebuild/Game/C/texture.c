@@ -429,7 +429,7 @@ void ProcessTextureInfo(char *lump_ptr)
 }
 
 #ifndef PSX
-extern char g_CurrentLevelFileName[64];
+extern char g_CurrentLevelFileName[GAME_PATH_MAX];
 
 // [A] one-shot texture replacement
 void LoadPermanentTPagesFromTIM()

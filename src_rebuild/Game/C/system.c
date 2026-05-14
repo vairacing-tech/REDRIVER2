@@ -16,7 +16,7 @@
 #include "draw.h"
 #include "pause.h"
 
-char gDataFolder[2048] = "DRIVER2\\";
+char gDataFolder[GAME_PATH_MAX] = "DRIVER2\\";
 
 #ifdef PSX
 
@@ -149,7 +149,7 @@ char* LoadingScreenNames[] = {
 };
 
 CdlFILE currentfileinfo;
-char currentfilename[128] = { 0 };
+char currentfilename[GAME_PATH_MAX] = { 0 };
 
 DRAW_MODE draw_mode_pal =
 { 0, 0, 0, 0, 512, 256, 0, 16 };
@@ -169,7 +169,7 @@ XYPAIR citylumps[8][4];
 
 #ifndef PSX
 int gContentOverride = 1;		// use unpacked filesystem?
-char g_CurrentLevelFileName[64];
+char g_CurrentLevelFileName[GAME_PATH_MAX];
 char* g_CurrentLevelSpoolData = NULL;
 #endif // !PSX
 
@@ -257,12 +257,12 @@ int Loadfile(char* name, char* addr)
 {
 	int nread;
 	unsigned char res[8];
-	char namebuffer[64];
+	char namebuffer[GAME_PATH_MAX];
 
 #if USE_PC_FILESYSTEM
 	int fileSize;
 
-	sprintf(namebuffer, "%s%s", gDataFolder, name);
+	snprintf(namebuffer, sizeof(namebuffer), "%s%s", gDataFolder, name);
 	FS_FixPathSlashes(namebuffer);
 
 	FILE* fptr = fopen(namebuffer, "rb");
@@ -290,13 +290,13 @@ int Loadfile(char* name, char* addr)
 // [D] [T]
 int FileExists(char* filename)
 {
-	char namebuffer[128];
+	char namebuffer[GAME_PATH_MAX];
 	
 	if (*filename == '\0')
 		return 0;
 
 #if USE_PC_FILESYSTEM
-	sprintf(namebuffer, "%s%s", gDataFolder, filename);
+	snprintf(namebuffer, sizeof(namebuffer), "%s%s", gDataFolder, filename);
 	FS_FixPathSlashes(namebuffer);
 
 	FILE* fp = fopen(namebuffer, "rb");
@@ -339,12 +339,12 @@ int FileExists(char* filename)
 // [D] [T]
 int LoadfileSeg(char* name, char* addr, int offset, int loadsize)
 {
-	char namebuffer[64];
+	char namebuffer[GAME_PATH_MAX];
 
 #if USE_PC_FILESYSTEM
 	int fileSize;
 
-	sprintf(namebuffer, "%s%s", gDataFolder, name);
+	snprintf(namebuffer, sizeof(namebuffer), "%s%s", gDataFolder, name);
 	FS_FixPathSlashes(namebuffer);
 
 	FILE* fptr = fopen(namebuffer, "rb");
@@ -534,12 +534,12 @@ void sector_ready(u_char intr, u_char* result)
 // It has to be this way
 int loadsectorsPC(char* addr, int sector, int nsectors)
 {
-	char namebuffer[64];
+	char namebuffer[GAME_PATH_MAX];
 
 	if (g_CurrentLevelFileName[0] == 0)
 		return 0;
 
-	strcpy(namebuffer, g_CurrentLevelFileName);
+	snprintf(namebuffer, sizeof(namebuffer), "%s", g_CurrentLevelFileName);
 	FS_FixPathSlashes(namebuffer);
 
 	FILE* fp = fopen(namebuffer, "rb");
@@ -870,7 +870,7 @@ CITYTYPE GetCityType()
 void SetCityType(CITYTYPE type)
 {
 	char* format;
-	char filename[64];
+	char filename[GAME_PATH_MAX];
 	unsigned char result[8];
 
 	if (type == lasttype && GameLevel == lastcity)
@@ -899,7 +899,7 @@ void SetCityType(CITYTYPE type)
 		break;
 	}
 
-	sprintf(filename, format, gDataFolder, LevelFiles[GameLevel]);
+	snprintf(filename, sizeof(filename), format, gDataFolder, LevelFiles[GameLevel]);
 	FS_FixPathSlashes(filename);
 
 	FILE* levFp = fopen(filename, "rb");

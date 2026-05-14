@@ -43,7 +43,7 @@ int gHiresFEFontRangeCount = 0;
 
 void InitHiresFEFont()
 {
-	char namebuffer[64];
+	char namebuffer[GAME_PATH_MAX];
 	u_char* data;
 
 	// init font2
@@ -55,7 +55,7 @@ void InitHiresFEFont()
 		int x, y;
 		int size;
 		FILE* fp;
-		sprintf(namebuffer, "%s%s", gDataFolder, "GFX\\HQ\\fefont.fn2");
+		snprintf(namebuffer, sizeof(namebuffer), "%s%s", gDataFolder, "GFX\\HQ\\fefont.fn2");
 		FS_FixPathSlashes(namebuffer);
 
 		fp = fopen(namebuffer, "rb");
@@ -78,7 +78,7 @@ void InitHiresFEFont()
 		}
 
 		// load TGA file
-		sprintf(namebuffer, "%s%s", gDataFolder, "GFX\\HQ\\fefont.tga");
+		snprintf(namebuffer, sizeof(namebuffer), "%s%s", gDataFolder, "GFX\\HQ\\fefont.tga");
 		FS_FixPathSlashes(namebuffer);
 		
 		if (LoadTGAImage(namebuffer, &data, width, height, bpp))

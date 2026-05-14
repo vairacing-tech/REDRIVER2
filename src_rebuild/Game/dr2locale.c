@@ -30,18 +30,18 @@ char* LanguageNames[5] =
 // [D] Driver 1 PC function
 int InitStringMng()
 {
-	char filename[80];
+	char filename[GAME_PATH_MAX];
 
-	if (gUserLanguage < 0 || gUserLanguage >= 6)
+	if (gUserLanguage < 0 || gUserLanguage >= 5)
 		gUserLanguage = 0;
 
-	sprintf(filename, "%sLANG\\%s_GAME.LTXT", gDataFolder, LanguageNames[gUserLanguage]);
+	snprintf(filename, sizeof(filename), "%sLANG\\%s_GAME.LTXT", gDataFolder, LanguageNames[gUserLanguage]);
 	FS_FixPathSlashes(filename);
 
 	if(InitStringLanguage(filename, 0) == -1)
 		return 0;
 	
-	sprintf(filename, "%sLANG\\%s_MISSION.LTXT", gDataFolder, LanguageNames[gUserLanguage]);
+	snprintf(filename, sizeof(filename), "%sLANG\\%s_MISSION.LTXT", gDataFolder, LanguageNames[gUserLanguage]);
 	FS_FixPathSlashes(filename);
 	
 	if(InitStringLanguage(filename, 1) == -1)

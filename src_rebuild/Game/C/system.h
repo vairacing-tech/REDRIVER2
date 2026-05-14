@@ -40,7 +40,9 @@ extern volatile char* _primTab2;			// 0x119400
 extern volatile char* _sbank_buffer;		// 0x180000
 extern volatile char* _replay_buffer;		// 0x1FABBC
 
-extern char gDataFolder[2048];
+#define GAME_PATH_MAX 2048
+
+extern char gDataFolder[GAME_PATH_MAX];
 
 #define PSX_MALLOC_SIZE 870332
 

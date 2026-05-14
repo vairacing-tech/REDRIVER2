@@ -71,6 +71,7 @@ list(FILTER UTIL_CPP EXCLUDE REGEX ".*/video_source/.*")
 add_library(main SHARED
     "${SRC_REBUILD}/redriver2_psxpc.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/android_fmv_stub.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/android_sdl_main.cpp"
     ${GAME_C}
     ${UTIL_C}
     ${UTIL_CPP}

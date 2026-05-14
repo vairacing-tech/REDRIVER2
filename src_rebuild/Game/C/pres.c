@@ -28,7 +28,7 @@ int gHiresFontRangeCount = 0;
 
 void InitHiresFonts()
 {
-	char namebuffer[64];
+	char namebuffer[GAME_PATH_MAX];
 	u_char* data;
 
 	// init digits
@@ -36,7 +36,7 @@ void InitHiresFonts()
 	{
 		int width, height, bpp;
 
-		sprintf(namebuffer, "%s%s", gDataFolder, "GFX\\HQ\\digits.tga");
+		snprintf(namebuffer, sizeof(namebuffer), "%s%s", gDataFolder, "GFX\\HQ\\digits.tga");
 		FS_FixPathSlashes(namebuffer);
 
 		if (LoadTGAImage(namebuffer, &data, width, height, bpp))
@@ -59,7 +59,7 @@ void InitHiresFonts()
 		int x, y;
 		int size;
 		FILE* fp;
-		sprintf(namebuffer, "%s%s", gDataFolder, "GFX\\HQ\\font2.fn2");
+		snprintf(namebuffer, sizeof(namebuffer), "%s%s", gDataFolder, "GFX\\HQ\\font2.fn2");
 		FS_FixPathSlashes(namebuffer);
 
 		fp = fopen(namebuffer, "rb");
@@ -82,7 +82,7 @@ void InitHiresFonts()
 		}
 
 		// load TGA file
-		sprintf(namebuffer, "%s%s", gDataFolder, "GFX\\HQ\\font2.tga");
+		snprintf(namebuffer, sizeof(namebuffer), "%s%s", gDataFolder, "GFX\\HQ\\font2.tga");
 		FS_FixPathSlashes(namebuffer);
 
 		if (LoadTGAImage(namebuffer, &data, width, height, bpp))

@@ -1420,7 +1420,7 @@ void GotRegion(void)
 }
 
 #if defined(SIMPLE_SPOOL)
-extern char g_CurrentLevelFileName[64];
+extern char g_CurrentLevelFileName[GAME_PATH_MAX];
 extern char* g_CurrentLevelSpoolData;
 
 int UpdateSpoolPC(void)
