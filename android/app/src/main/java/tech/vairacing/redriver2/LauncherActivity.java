@@ -262,13 +262,14 @@ public class LauncherActivity extends Activity {
                 + "windowHeight=720\n"
                 + "fullscreen=1\n"
                 + "vsync=1\n"
-                + "pgxpTextureMapping=1\n"
-                + "pgxpZbuffer=1\n"
+                + "pgxpTextureMapping=0\n"
+                + "pgxpZbuffer=0\n"
                 + "bilinearFiltering=0\n\n"
                 + "[game]\n"
                 + "drawDistance=600\n"
                 + "fastLoadingScreens=1\n"
-                + "languageId=0\n",
+                + "languageId=0\n"
+                + "unlockAll=1\n",
             dataFolder);
         java.nio.file.Files.write(GamePaths.config(this).toPath(), config.getBytes(StandardCharsets.UTF_8));
     }

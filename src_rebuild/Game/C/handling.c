@@ -1327,11 +1327,11 @@ void ProcessCarPad(CAR_DATA* cp, u_int pad, char PadSteer, char use_analogue)
 					targetCarId = -1;
 
 				// apply rubber banding to player car depending on distance from target car
-				if (targetCarId != -1)
+				if (targetCarId >= 0 && targetCarId < MAX_CARS)
 				{
 					tp = &car_data[targetCarId];
 
-					if (3050 < cp->ap.carCos->powerRatio)
+					if (cp->ap.carCos && tp->ap.carCos && 3050 < cp->ap.carCos->powerRatio)
 						cp->thrust = FIXEDH(tp->ap.carCos->powerRatio * 4915);
 
 					cx = cp->hd.where.t[0] - tp->hd.where.t[0] >> 10;

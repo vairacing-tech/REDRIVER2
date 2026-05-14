@@ -630,17 +630,15 @@ int main(int argc, char** argv)
 		}
 #endif
 	}
-#ifndef _DEBUG
+#if defined(DEBUG_OPTIONS) || defined(_DEBUG)
+	g_dbg_gameDebugKeys = GameDebugKeys;
+	g_dbg_gameDebugMouse = FreeCameraMouseHandler;
+#else
 	if (enableFreecamera)
 	{
 		g_dbg_gameDebugKeys = FreeCameraKeyboardHandler;
 		g_dbg_gameDebugMouse = FreeCameraMouseHandler;
 	}
-#else
-
-	g_dbg_gameDebugKeys = GameDebugKeys;
-	g_dbg_gameDebugMouse = FreeCameraMouseHandler;
-
 #endif
 
 	PsyX_Initialise("REDRIVER2", fullScreen ? screenWidth : windowWidth, fullScreen ? screenHeight : windowHeight, fullScreen);
