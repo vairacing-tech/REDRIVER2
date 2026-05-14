@@ -43,3 +43,8 @@ src_rebuild/obj/*
 src_rebuild/build*
 src_rebuild/*.make
 src_rebuild/Makefile
+android/.gradle/
+android/build/
+android/**/build/
+android/**/.cxx/
+android/local.properties

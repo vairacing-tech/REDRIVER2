@@ -604,9 +604,9 @@ int main(int argc, char** argv)
 			strcpy(gDataFolder, dataFolderStr);
 
 			int len = strlen(gDataFolder);
-			if (gDataFolder[len - 1] != '\\')
+			if (len > 0 && gDataFolder[len - 1] != '\\' && gDataFolder[len - 1] != '/')
 			{
-				gDataFolder[len] = '\\';
+				gDataFolder[len] = '/';
 				gDataFolder[len + 1] = '\0';
 			}
 		}

@@ -61,6 +61,8 @@
 
 #ifdef __EMSCRIPTEN__
 #define trap(ode) {printError("EXCEPTION code: %x\n", ode);}
+#elif defined(__aarch64__) || defined(__arm__)
+#define trap(ode) {printError("EXCEPTION code: %x\n", ode); __builtin_trap();}
 #elif _MSC_VER >= 1400
 #define trap(ode) {printError("EXCEPTION code: %x\n", ode); __debugbreak();}
 #elif defined(__GNUC__)

@@ -16,7 +16,7 @@
 #include "draw.h"
 #include "pause.h"
 
-char gDataFolder[32] = "DRIVER2\\";
+char gDataFolder[2048] = "DRIVER2\\";
 
 #ifdef PSX
 

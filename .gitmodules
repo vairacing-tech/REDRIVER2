@@ -1,3 +1,11 @@
 [submodule "src_rebuild/PsyCross"]
 	path = src_rebuild/PsyCross
-	url = https://github.com/OpenDriver2/PsyCross.git
+	url = https://github.com/vairacing-tech/PsyCross.git
+	branch = redriver2-android
+[submodule "android/third_party/SDL"]
+	path = android/third_party/SDL
+	url = https://github.com/libsdl-org/SDL.git
+	branch = SDL2
+[submodule "android/third_party/openal-soft"]
+	path = android/third_party/openal-soft
+	url = https://github.com/kcat/openal-soft.git
