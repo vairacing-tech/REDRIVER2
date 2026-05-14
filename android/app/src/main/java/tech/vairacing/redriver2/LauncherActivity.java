@@ -116,8 +116,8 @@ public class LauncherActivity extends Activity {
         setBusy(true, "Importando datos...");
         executor.execute(() -> {
             try {
-                Uri driver2Uri = resolveDriver2Uri(treeUri);
-                if (driver2Uri == null) {
+                String driver2DocumentId = resolveDriver2DocumentId(treeUri);
+                if (driver2DocumentId == null) {
                     throw new IOException("Selecciona la carpeta DRIVER2 o una carpeta que la contenga.");
                 }
 
@@ -127,7 +127,7 @@ public class LauncherActivity extends Activity {
                     throw new IOException("No se pudo crear " + target);
                 }
 
-                copyDocumentTree(driver2Uri, target);
+                copyDocumentTree(treeUri, driver2DocumentId, target);
                 writeConfig();
 
                 mainHandler.post(this::startGame);
@@ -146,17 +146,17 @@ public class LauncherActivity extends Activity {
         importButton.setEnabled(!busy);
     }
 
-    private Uri resolveDriver2Uri(Uri treeUri) {
+    private String resolveDriver2DocumentId(Uri treeUri) {
         String rootName = getDisplayName(treeUri);
+        String rootDocumentId = DocumentsContract.getTreeDocumentId(treeUri);
         if ("DRIVER2".equalsIgnoreCase(rootName)) {
-            return treeUri;
+            return rootDocumentId;
         }
-        return findChild(treeUri, "DRIVER2");
+        return findChildDocumentId(treeUri, rootDocumentId, "DRIVER2");
     }
 
-    private Uri findChild(Uri parentTreeUri, String childName) {
-        String parentId = DocumentsContract.getTreeDocumentId(parentTreeUri);
-        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(parentTreeUri, parentId);
+    private String findChildDocumentId(Uri treeUri, String parentDocumentId, String childName) {
+        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocumentId);
         try (Cursor cursor = getContentResolver().query(childrenUri,
             new String[] {
                 DocumentsContract.Document.COLUMN_DOCUMENT_ID,
@@ -172,7 +172,7 @@ public class LauncherActivity extends Activity {
                 String mimeType = cursor.getString(2);
                 if (childName.equalsIgnoreCase(displayName)
                     && DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType)) {
-                    return DocumentsContract.buildTreeDocumentUri(parentTreeUri.getAuthority(), documentId);
+                    return documentId;
                 }
             }
         }
@@ -191,10 +191,9 @@ public class LauncherActivity extends Activity {
         return "";
     }
 
-    private void copyDocumentTree(Uri treeUri, File targetDir) throws IOException {
+    private void copyDocumentTree(Uri treeUri, String documentId, File targetDir) throws IOException {
         ContentResolver resolver = getContentResolver();
-        String treeId = DocumentsContract.getTreeDocumentId(treeUri);
-        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, treeId);
+        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, documentId);
         try (Cursor cursor = resolver.query(childrenUri,
             new String[] {
                 DocumentsContract.Document.COLUMN_DOCUMENT_ID,
@@ -206,17 +205,16 @@ public class LauncherActivity extends Activity {
             }
 
             while (cursor.moveToNext()) {
-                String documentId = cursor.getString(0);
+                String childDocumentId = cursor.getString(0);
                 String name = cursor.getString(1);
                 String mimeType = cursor.getString(2);
-                Uri childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId);
+                Uri childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childDocumentId);
                 File out = new File(targetDir, name);
                 if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType)) {
                     if (!out.mkdirs() && !out.isDirectory()) {
                         throw new IOException("No se pudo crear " + out);
                     }
-                    Uri childTree = DocumentsContract.buildTreeDocumentUri(treeUri.getAuthority(), documentId);
-                    copyDocumentTree(childTree, out);
+                    copyDocumentTree(treeUri, childDocumentId, out);
                 } else {
                     copyDocumentFile(childUri, out);
                 }
