@@ -84,7 +84,7 @@ final class AndroidConfig {
 
     static AndroidConfig defaults(Context context) {
         AndroidConfig config = new AndroidConfig();
-        config.dataFolder = GamePaths.driver2Data(context).getAbsolutePath().replace('\\', '/') + "/";
+        config.dataFolder = dataFolderPath(context);
         config.controllerMappings.put("cross", "a");
         config.controllerMappings.put("square", "x");
         config.controllerMappings.put("circle", "b");
@@ -135,7 +135,7 @@ final class AndroidConfig {
             String value = line.substring(equals + 1).trim();
             config.apply(section, key, value);
         }
-        config.dataFolder = GamePaths.driver2Data(context).getAbsolutePath().replace('\\', '/') + "/";
+        config.dataFolder = dataFolderPath(context);
         return config;
     }
 
@@ -149,7 +149,7 @@ final class AndroidConfig {
             throw new IOException("No se pudo crear " + profile);
         }
 
-        dataFolder = GamePaths.driver2Data(context).getAbsolutePath().replace('\\', '/') + "/";
+        dataFolder = dataFolderPath(context);
         StringBuilder text = new StringBuilder();
         text.append("[fs]\n");
         text.append("dataFolder=").append(dataFolder).append("\n\n");
@@ -257,6 +257,10 @@ final class AndroidConfig {
 
     private static void appendInt(StringBuilder text, String key, int value) {
         text.append(String.format(Locale.US, "%s=%d\n", key, value));
+    }
+
+    private static String dataFolderPath(Context context) {
+        return GamePaths.driver2Data(context).getAbsolutePath().replace('\\', '/') + "/";
     }
 
     private static int parseInt(String value, int fallback) {

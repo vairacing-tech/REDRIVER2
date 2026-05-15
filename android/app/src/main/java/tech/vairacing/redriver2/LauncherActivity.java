@@ -48,6 +48,8 @@ public class LauncherActivity extends Activity {
     private TextView importStatus;
     private ProgressBar importProgress;
     private Button importButton;
+    private Spinner importStorage;
+    private GamePaths.StorageLocation[] importStorageLocations;
     private int currentScreen = SCREEN_MAIN;
 
     @Override
@@ -101,10 +103,9 @@ public class LauncherActivity extends Activity {
         Button optionsButton = addButton(content, "Opciones");
         optionsButton.setOnClickListener(v -> showOptionsUi());
 
-        if (!GamePaths.isInstalled(this)) {
-            Button importDataButton = addButton(content, "Importar DRIVER2");
-            importDataButton.setOnClickListener(v -> showImportUi());
-        }
+        Button importDataButton = addButton(content,
+            GamePaths.isInstalled(this) ? "Datos del juego" : "Importar DRIVER2");
+        importDataButton.setOnClickListener(v -> showImportUi());
 
         Button exitButton = addButton(content, "Salir");
         exitButton.setOnClickListener(v -> finishAffinity());
@@ -242,7 +243,15 @@ public class LauncherActivity extends Activity {
         LinearLayout content = createContentLayout(false);
         addTitle(content, "Importar datos");
 
-        importStatus = addCaption(content, "Selecciona la carpeta DRIVER2 o una carpeta que la contenga.");
+        importStatus = addCaption(content, GamePaths.isInstalled(this)
+            ? "Datos instalados en " + GamePaths.currentStorageLabel(this) + "."
+            : "Selecciona la carpeta DRIVER2 o una carpeta que la contenga.");
+        importStorageLocations = GamePaths.availableStorageLocations(this);
+        importStorage = addSpinner(content, "Destino", storageLabels(importStorageLocations),
+            storageIndexOf(importStorageLocations, GamePaths.getDataStorageId(this)));
+        if (!GamePaths.hasRemovableStorage(this)) {
+            addCaption(content, "No se ha detectado una tarjeta SD disponible.");
+        }
         importProgress = new ProgressBar(this);
         importProgress.setIndeterminate(true);
         importProgress.setVisibility(ProgressBar.GONE);
@@ -285,6 +294,10 @@ public class LauncherActivity extends Activity {
     }
 
     private void importTree(Uri treeUri) {
+        String previousStorageId = GamePaths.getDataStorageId(this);
+        GamePaths.StorageLocation selectedStorage =
+            importStorageLocations[importStorage.getSelectedItemPosition()];
+
         setBusy(true, "Importando datos...");
         executor.execute(() -> {
             try {
@@ -293,14 +306,18 @@ public class LauncherActivity extends Activity {
                     throw new IOException("Selecciona la carpeta DRIVER2 o una carpeta que la contenga.");
                 }
 
-                File target = GamePaths.driver2Data(this);
+                File target = GamePaths.driver2Data(this, selectedStorage.id);
                 deleteRecursively(target);
                 if (!target.mkdirs() && !target.isDirectory()) {
                     throw new IOException("No se pudo crear " + target);
                 }
 
                 copyDocumentTree(treeUri, driver2DocumentId, target);
+                GamePaths.setDataStorageId(this, selectedStorage.id);
                 AndroidConfig.load(this).save(this);
+                if (!previousStorageId.equals(selectedStorage.id)) {
+                    deleteRecursively(GamePaths.driver2Data(this, previousStorageId));
+                }
                 mainHandler.post(this::showMainMenu);
             } catch (Exception ex) {
                 mainHandler.post(() -> {
@@ -612,6 +629,23 @@ public class LauncherActivity extends Activity {
             labels[i] = String.valueOf(values[i]);
         }
         return labels;
+    }
+
+    private String[] storageLabels(GamePaths.StorageLocation[] locations) {
+        String[] labels = new String[locations.length];
+        for (int i = 0; i < locations.length; i++) {
+            labels[i] = locations[i].label;
+        }
+        return labels;
+    }
+
+    private int storageIndexOf(GamePaths.StorageLocation[] locations, String storageId) {
+        for (int i = 0; i < locations.length; i++) {
+            if (locations[i].id.equals(storageId)) {
+                return i;
+            }
+        }
+        return 0;
     }
 
     private int numberIndexOf(int[] values, int needle) {
