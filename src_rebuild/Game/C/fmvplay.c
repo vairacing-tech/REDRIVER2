@@ -7,7 +7,6 @@
 #include "E3stuff.h"
 #include "main.h"
 
-
 // FMV
 int gSubtitles = 1;
 int gNoFMV = 0;
@@ -39,6 +38,15 @@ volatile char* _fmv_memory = (char*)0x800ff800; // there was no 0x800
 void PlayRender(RENDER_ARGS *args)
 {
 	static unsigned long oldsp;
+
+#ifdef __ANDROID__
+	// Android currently has no native FMV player; keep the game state intact
+	// instead of tearing down and rebuilding audio/video around a no-op stub.
+	if (gNoFMV == 0)
+		FMV_main(args);
+
+	return;
+#endif
 
 	StopAllChannels();
 

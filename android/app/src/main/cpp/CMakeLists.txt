@@ -96,6 +96,7 @@ target_compile_definitions(main
         $<$<CONFIG:Debug>:DEBUG_OPTIONS>
 )
 target_compile_options(main PRIVATE
+    -fsigned-char
     -fpermissive
     -Wno-c++11-narrowing
     -Wno-constant-conversion
