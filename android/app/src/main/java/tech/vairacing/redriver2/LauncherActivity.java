@@ -143,6 +143,7 @@ public class LauncherActivity extends Activity {
         CheckBox fastLoading = addCheckBox(content, "Pantallas de carga rapidas", config.fastLoadingScreens != 0);
         CheckBox disableBridges = addCheckBox(content, "Desactivar puentes de Chicago", config.disableChicagoBridges != 0);
         CheckBox dynamicLights = addCheckBox(content, "Luces dinamicas", config.dynamicLights != 0);
+        CheckBox unlockAll = addCheckBox(content, "Desbloquear todo el contenido jugable", config.unlockAll != 0);
         int fieldOfViewValue = clamp(config.fieldOfView,
             AndroidConfig.MIN_FIELD_OF_VIEW, AndroidConfig.MAX_FIELD_OF_VIEW);
         int[] fieldOfViewChoices = buildNumberChoices(fieldOfViewValue,
@@ -178,6 +179,7 @@ public class LauncherActivity extends Activity {
                 config.fastLoadingScreens = bool(fastLoading);
                 config.disableChicagoBridges = bool(disableBridges);
                 config.dynamicLights = bool(dynamicLights);
+                config.unlockAll = bool(unlockAll);
                 config.fieldOfView = fieldOfViewChoices[fieldOfView.getSelectedItemPosition()];
                 config.drawDistance = drawDistanceChoices[drawDistance.getSelectedItemPosition()];
                 config.languageId = language.getSelectedItemPosition();
