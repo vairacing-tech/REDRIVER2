@@ -11,6 +11,11 @@ import java.util.Locale;
 import java.util.Map;
 
 final class AndroidConfig {
+    static final int MIN_DRAW_DISTANCE = 441;
+    static final int MAX_DRAW_DISTANCE = 1800;
+    static final int MIN_FIELD_OF_VIEW = 128;
+    static final int MAX_FIELD_OF_VIEW = 384;
+
     static final String[] LANGUAGE_NAMES = {
         "English", "Italiano", "Deutsch", "Francais", "Espanol"
     };

@@ -143,12 +143,18 @@ public class LauncherActivity extends Activity {
         CheckBox fastLoading = addCheckBox(content, "Pantallas de carga rapidas", config.fastLoadingScreens != 0);
         CheckBox disableBridges = addCheckBox(content, "Desactivar puentes de Chicago", config.disableChicagoBridges != 0);
         CheckBox dynamicLights = addCheckBox(content, "Luces dinamicas", config.dynamicLights != 0);
-        int[] fieldOfViewChoices = buildNumberChoices(config.fieldOfView, 192, 224, 256, 288, 320, 352, 384);
+        int fieldOfViewValue = clamp(config.fieldOfView,
+            AndroidConfig.MIN_FIELD_OF_VIEW, AndroidConfig.MAX_FIELD_OF_VIEW);
+        int[] fieldOfViewChoices = buildNumberChoices(fieldOfViewValue,
+            128, 160, 192, 224, 256, 288, 320, 352, 384);
         Spinner fieldOfView = addSpinner(content, "Campo de vision", numberLabels(fieldOfViewChoices),
-            numberIndexOf(fieldOfViewChoices, config.fieldOfView));
-        int[] drawDistanceChoices = buildNumberChoices(config.drawDistance, 600, 900, 1200, 1500, 1800);
+            numberIndexOf(fieldOfViewChoices, fieldOfViewValue));
+        int drawDistanceValue = clamp(config.drawDistance,
+            AndroidConfig.MIN_DRAW_DISTANCE, AndroidConfig.MAX_DRAW_DISTANCE);
+        int[] drawDistanceChoices = buildNumberChoices(drawDistanceValue,
+            441, 600, 900, 1200, 1500, 1800);
         Spinner drawDistance = addSpinner(content, "Distancia de dibujado", numberLabels(drawDistanceChoices),
-            numberIndexOf(drawDistanceChoices, config.drawDistance));
+            numberIndexOf(drawDistanceChoices, drawDistanceValue));
         Spinner language = addSpinner(content, "Idioma del juego", AndroidConfig.LANGUAGE_NAMES, clamp(config.languageId, 0, 4));
 
         addSectionTitle(content, "Controles");
