@@ -54,7 +54,7 @@ target_compile_options(psycross PRIVATE
     -Wno-format
     -Wno-unused-value
 )
-target_compile_definitions(psycross PUBLIC NTSC_VERSION USE_PGXP=0)
+target_compile_definitions(psycross PUBLIC NTSC_VERSION)
 target_link_libraries(psycross PUBLIC SDL2::SDL2 OpenAL)
 
 file(GLOB_RECURSE GAME_C CONFIGURE_DEPENDS
