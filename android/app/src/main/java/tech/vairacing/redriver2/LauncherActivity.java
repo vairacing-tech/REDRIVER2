@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.DocumentsContract;
-import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +16,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -129,8 +127,9 @@ public class LauncherActivity extends Activity {
         addTitle(content, "Opciones");
 
         addSectionTitle(content, "Graficos");
-        EditText widthInput = addNumberInput(content, "Ancho", config.windowWidth);
-        EditText heightInput = addNumberInput(content, "Alto", config.windowHeight);
+        int[][] resolutionChoices = buildResolutionChoices(config.windowWidth, config.windowHeight);
+        Spinner resolution = addSpinner(content, "Resolucion", resolutionLabels(resolutionChoices),
+            resolutionIndexOf(resolutionChoices, config.windowWidth, config.windowHeight));
         CheckBox nativeResolution = addCheckBox(content, "Usar resolucion nativa en pantalla completa",
             config.screenWidth == 0 && config.screenHeight == 0);
         CheckBox fullscreen = addCheckBox(content, "Ejecutar en pantalla completa", config.fullscreen != 0);
@@ -144,8 +143,12 @@ public class LauncherActivity extends Activity {
         CheckBox fastLoading = addCheckBox(content, "Pantallas de carga rapidas", config.fastLoadingScreens != 0);
         CheckBox disableBridges = addCheckBox(content, "Desactivar puentes de Chicago", config.disableChicagoBridges != 0);
         CheckBox dynamicLights = addCheckBox(content, "Luces dinamicas", config.dynamicLights != 0);
-        EditText fieldOfView = addNumberInput(content, "Campo de vision", config.fieldOfView);
-        EditText drawDistance = addNumberInput(content, "Distancia de dibujado", config.drawDistance);
+        int[] fieldOfViewChoices = buildNumberChoices(config.fieldOfView, 192, 224, 256, 288, 320, 352, 384);
+        Spinner fieldOfView = addSpinner(content, "Campo de vision", numberLabels(fieldOfViewChoices),
+            numberIndexOf(fieldOfViewChoices, config.fieldOfView));
+        int[] drawDistanceChoices = buildNumberChoices(config.drawDistance, 600, 900, 1200, 1500, 1800);
+        Spinner drawDistance = addSpinner(content, "Distancia de dibujado", numberLabels(drawDistanceChoices),
+            numberIndexOf(drawDistanceChoices, config.drawDistance));
         Spinner language = addSpinner(content, "Idioma del juego", AndroidConfig.LANGUAGE_NAMES, clamp(config.languageId, 0, 4));
 
         addSectionTitle(content, "Controles");
@@ -155,8 +158,9 @@ public class LauncherActivity extends Activity {
         Button saveButton = addButton(content, "Guardar y volver");
         saveButton.setOnClickListener(v -> {
             try {
-                config.windowWidth = parseBoundedInt(widthInput, 320, 7680, "Ancho");
-                config.windowHeight = parseBoundedInt(heightInput, 240, 4320, "Alto");
+                int[] selectedResolution = resolutionChoices[resolution.getSelectedItemPosition()];
+                config.windowWidth = selectedResolution[0];
+                config.windowHeight = selectedResolution[1];
                 config.screenWidth = nativeResolution.isChecked() ? 0 : config.windowWidth;
                 config.screenHeight = nativeResolution.isChecked() ? 0 : config.windowHeight;
                 config.fullscreen = bool(fullscreen);
@@ -168,8 +172,8 @@ public class LauncherActivity extends Activity {
                 config.fastLoadingScreens = bool(fastLoading);
                 config.disableChicagoBridges = bool(disableBridges);
                 config.dynamicLights = bool(dynamicLights);
-                config.fieldOfView = parseBoundedInt(fieldOfView, 128, 384, "Campo de vision");
-                config.drawDistance = parseBoundedInt(drawDistance, 441, 1800, "Distancia de dibujado");
+                config.fieldOfView = fieldOfViewChoices[fieldOfView.getSelectedItemPosition()];
+                config.drawDistance = drawDistanceChoices[drawDistance.getSelectedItemPosition()];
                 config.languageId = language.getSelectedItemPosition();
                 config.save(this);
                 showMainMenu();
@@ -182,8 +186,7 @@ public class LauncherActivity extends Activity {
         backButton.setOnClickListener(v -> showMainMenu());
 
         CompoundButton.OnCheckedChangeListener resolutionListener = (buttonView, isChecked) -> {
-            widthInput.setEnabled(!isChecked);
-            heightInput.setEnabled(!isChecked);
+            resolution.setEnabled(!isChecked);
         };
         nativeResolution.setOnCheckedChangeListener(resolutionListener);
         resolutionListener.onCheckedChanged(nativeResolution, nativeResolution.isChecked());
@@ -498,18 +501,6 @@ public class LauncherActivity extends Activity {
         return checkBox;
     }
 
-    private EditText addNumberInput(LinearLayout layout, String label, int value) {
-        addFieldLabel(layout, label);
-        EditText input = new EditText(this);
-        input.setText(String.valueOf(value));
-        input.setTextColor(COLOR_TEXT);
-        input.setInputType(InputType.TYPE_CLASS_NUMBER);
-        LinearLayout.LayoutParams params = matchWrap();
-        params.setMargins(0, 0, 0, 8);
-        layout.addView(input, params);
-        return input;
-    }
-
     private Spinner addSpinner(LinearLayout layout, String label, String[] values, int selected) {
         addFieldLabel(layout, label);
         Spinner spinner = new Spinner(this);
@@ -538,23 +529,6 @@ public class LauncherActivity extends Activity {
             ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
-    private int parseBoundedInt(EditText input, int min, int max, String label) {
-        String raw = input.getText().toString().trim();
-        if (raw.isEmpty()) {
-            throw new IllegalArgumentException(label + " no puede estar vacio.");
-        }
-        int value;
-        try {
-            value = Integer.parseInt(raw);
-        } catch (NumberFormatException ex) {
-            throw new IllegalArgumentException(label + " debe ser numerico.");
-        }
-        if (value < min || value > max) {
-            throw new IllegalArgumentException(label + " debe estar entre " + min + " y " + max + ".");
-        }
-        return value;
-    }
-
     private int bool(CheckBox checkBox) {
         return checkBox.isChecked() ? 1 : 0;
     }
@@ -573,5 +547,71 @@ public class LauncherActivity extends Activity {
 
     private int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private int[][] buildResolutionChoices(int currentWidth, int currentHeight) {
+        int[][] presets = {
+            { 640, 480 },
+            { 800, 600 },
+            { 1024, 768 },
+            { 1280, 720 },
+            { 1600, 900 },
+            { 1920, 1080 },
+            { 2560, 1440 }
+        };
+        if (resolutionIndexOf(presets, currentWidth, currentHeight) >= 0) {
+            return presets;
+        }
+
+        int[][] choices = new int[presets.length + 1][2];
+        for (int i = 0; i < presets.length; i++) {
+            choices[i] = presets[i];
+        }
+        choices[presets.length] = new int[] { currentWidth, currentHeight };
+        return choices;
+    }
+
+    private String[] resolutionLabels(int[][] choices) {
+        String[] labels = new String[choices.length];
+        for (int i = 0; i < choices.length; i++) {
+            labels[i] = choices[i][0] + " x " + choices[i][1];
+        }
+        return labels;
+    }
+
+    private int resolutionIndexOf(int[][] choices, int width, int height) {
+        for (int i = 0; i < choices.length; i++) {
+            if (choices[i][0] == width && choices[i][1] == height) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private int[] buildNumberChoices(int current, int... presets) {
+        if (numberIndexOf(presets, current) >= 0) {
+            return presets;
+        }
+        int[] choices = new int[presets.length + 1];
+        System.arraycopy(presets, 0, choices, 0, presets.length);
+        choices[presets.length] = current;
+        return choices;
+    }
+
+    private String[] numberLabels(int[] values) {
+        String[] labels = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            labels[i] = String.valueOf(values[i]);
+        }
+        return labels;
+    }
+
+    private int numberIndexOf(int[] values, int needle) {
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] == needle) {
+                return i;
+            }
+        }
+        return 0;
     }
 }
