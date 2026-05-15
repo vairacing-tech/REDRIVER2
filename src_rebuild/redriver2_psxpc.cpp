@@ -640,6 +640,7 @@ int main(int argc, char** argv)
 		g_dbg_gameDebugMouse = FreeCameraMouseHandler;
 	}
 #endif
+	g_cfg_gameOnAppBackground = PauseGameForAppBackground;
 
 	PsyX_Initialise("REDRIVER2", fullScreen ? screenWidth : windowWidth, fullScreen ? screenHeight : windowHeight, fullScreen);
 

@@ -37,6 +37,7 @@ extern void DrawGame(); // 0x0005C458
 
 extern void EndGame(GAMEMODE mode); // 0x0005C574
 extern void EnablePause(PAUSEMODE mode); // 0x0005C590
+extern void PauseGameForAppBackground(void);
 
 extern int redriver2_main(int argc, char** argv); // 0x0005B384
 

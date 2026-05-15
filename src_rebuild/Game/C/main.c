@@ -1661,6 +1661,18 @@ void EnablePause(PAUSEMODE mode)
 	}
 }
 
+void PauseGameForAppBackground(void)
+{
+	if (AttractMode || pauseflag || FrameCnt <= 2)
+		return;
+
+	WantPause = 0;
+	PauseMode = PAUSEMODE_PAUSE;
+	pauseflag = 1;
+	PauseSound();
+	ShowPauseMenu(PauseMode);
+}
+
 // [D] [T] This is really a Psy-Q function
 void SsSetSerialVol(short s_num, short voll, short volr)
 {
