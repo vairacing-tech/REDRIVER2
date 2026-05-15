@@ -9,11 +9,19 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.DocumentsContract;
+import android.text.InputType;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,30 +29,34 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class LauncherActivity extends Activity {
     private static final int REQUEST_OPEN_TREE = 1001;
+    private static final int COLOR_BACKGROUND = 0xff111111;
+    private static final int COLOR_TEXT = 0xffffffff;
+    private static final int COLOR_MUTED = 0xffb8b8b8;
+    private static final int SCREEN_MAIN = 0;
+    private static final int SCREEN_OPTIONS = 1;
+    private static final int SCREEN_CONTROLLER = 2;
+    private static final int SCREEN_IMPORT = 3;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    private LinearLayout layout;
-    private TextView status;
-    private ProgressBar progress;
+    private TextView importStatus;
+    private ProgressBar importProgress;
     private Button importButton;
+    private int currentScreen = SCREEN_MAIN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (GamePaths.isInstalled(this)) {
-            startGame();
-            return;
-        }
-        showImportUi();
+        ensureConfigExists();
+        showMainMenu();
     }
 
     @Override
@@ -53,36 +65,185 @@ public class LauncherActivity extends Activity {
         super.onDestroy();
     }
 
+    @Override
+    public void onBackPressed() {
+        if (currentScreen == SCREEN_OPTIONS || currentScreen == SCREEN_IMPORT) {
+            showMainMenu();
+        } else if (currentScreen == SCREEN_CONTROLLER) {
+            showOptionsUi();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    private void ensureConfigExists() {
+        if (GamePaths.config(this).isFile()) {
+            return;
+        }
+        try {
+            AndroidConfig.defaults(this).save(this);
+        } catch (IOException ex) {
+            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void showMainMenu() {
+        currentScreen = SCREEN_MAIN;
+        LinearLayout content = createContentLayout(false);
+        addTitle(content, "REDRIVER2");
+        addCaption(content, GamePaths.isInstalled(this)
+            ? "Datos instalados. Preparado para arrancar."
+            : "Importa la carpeta DRIVER2 antes de iniciar el juego.");
+
+        Button startButton = addButton(content, "Iniciar juego");
+        startButton.setEnabled(GamePaths.isInstalled(this));
+        startButton.setOnClickListener(v -> startGame());
+        startButton.requestFocus();
+
+        Button optionsButton = addButton(content, "Opciones");
+        optionsButton.setOnClickListener(v -> showOptionsUi());
+
+        if (!GamePaths.isInstalled(this)) {
+            Button importDataButton = addButton(content, "Importar DRIVER2");
+            importDataButton.setOnClickListener(v -> showImportUi());
+        }
+
+        Button exitButton = addButton(content, "Salir");
+        exitButton.setOnClickListener(v -> finishAffinity());
+
+        setContentView(wrapInScrollView(content));
+    }
+
+    private void showOptionsUi() {
+        currentScreen = SCREEN_OPTIONS;
+        final AndroidConfig config;
+        try {
+            config = AndroidConfig.load(this);
+        } catch (IOException ex) {
+            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
+            showMainMenu();
+            return;
+        }
+
+        LinearLayout content = createContentLayout(true);
+        addTitle(content, "Opciones");
+
+        addSectionTitle(content, "Graficos");
+        EditText widthInput = addNumberInput(content, "Ancho", config.windowWidth);
+        EditText heightInput = addNumberInput(content, "Alto", config.windowHeight);
+        CheckBox nativeResolution = addCheckBox(content, "Usar resolucion nativa en pantalla completa",
+            config.screenWidth == 0 && config.screenHeight == 0);
+        CheckBox fullscreen = addCheckBox(content, "Ejecutar en pantalla completa", config.fullscreen != 0);
+        CheckBox textureFiltering = addCheckBox(content, "Filtrado de texturas", config.bilinearFiltering != 0);
+        CheckBox perspectiveTexturing = addCheckBox(content, "Texturas con perspectiva", config.pgxpTextureMapping != 0);
+        CheckBox zBuffer = addCheckBox(content, "Z-buffer", config.pgxpZbuffer != 0);
+        CheckBox widescreenOverlays = addCheckBox(content, "Overlays panoramicos", config.widescreenOverlays != 0);
+        CheckBox vsync = addCheckBox(content, "VSync", config.vsync != 0);
+
+        addSectionTitle(content, "Gameplay");
+        CheckBox fastLoading = addCheckBox(content, "Pantallas de carga rapidas", config.fastLoadingScreens != 0);
+        CheckBox disableBridges = addCheckBox(content, "Desactivar puentes de Chicago", config.disableChicagoBridges != 0);
+        CheckBox dynamicLights = addCheckBox(content, "Luces dinamicas", config.dynamicLights != 0);
+        EditText fieldOfView = addNumberInput(content, "Campo de vision", config.fieldOfView);
+        EditText drawDistance = addNumberInput(content, "Distancia de dibujado", config.drawDistance);
+        Spinner language = addSpinner(content, "Idioma", AndroidConfig.LANGUAGE_NAMES, clamp(config.languageId, 0, 4));
+
+        addSectionTitle(content, "Controles");
+        Button controllerButton = addButton(content, "Mapeo de mando");
+        controllerButton.setOnClickListener(v -> showControllerMappingUi(config));
+
+        Button saveButton = addButton(content, "Guardar y volver");
+        saveButton.setOnClickListener(v -> {
+            try {
+                config.windowWidth = parseBoundedInt(widthInput, 320, 7680, "Ancho");
+                config.windowHeight = parseBoundedInt(heightInput, 240, 4320, "Alto");
+                config.screenWidth = nativeResolution.isChecked() ? 0 : config.windowWidth;
+                config.screenHeight = nativeResolution.isChecked() ? 0 : config.windowHeight;
+                config.fullscreen = bool(fullscreen);
+                config.bilinearFiltering = bool(textureFiltering);
+                config.pgxpTextureMapping = bool(perspectiveTexturing);
+                config.pgxpZbuffer = bool(zBuffer);
+                config.widescreenOverlays = bool(widescreenOverlays);
+                config.vsync = bool(vsync);
+                config.fastLoadingScreens = bool(fastLoading);
+                config.disableChicagoBridges = bool(disableBridges);
+                config.dynamicLights = bool(dynamicLights);
+                config.fieldOfView = parseBoundedInt(fieldOfView, 128, 384, "Campo de vision");
+                config.drawDistance = parseBoundedInt(drawDistance, 441, 1800, "Distancia de dibujado");
+                config.languageId = language.getSelectedItemPosition();
+                config.save(this);
+                showMainMenu();
+            } catch (IOException | IllegalArgumentException ex) {
+                Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+
+        Button backButton = addButton(content, "Volver sin guardar");
+        backButton.setOnClickListener(v -> showMainMenu());
+
+        CompoundButton.OnCheckedChangeListener resolutionListener = (buttonView, isChecked) -> {
+            widthInput.setEnabled(!isChecked);
+            heightInput.setEnabled(!isChecked);
+        };
+        nativeResolution.setOnCheckedChangeListener(resolutionListener);
+        resolutionListener.onCheckedChanged(nativeResolution, nativeResolution.isChecked());
+
+        setContentView(wrapInScrollView(content));
+    }
+
+    private void showControllerMappingUi(AndroidConfig config) {
+        currentScreen = SCREEN_CONTROLLER;
+        LinearLayout content = createContentLayout(true);
+        addTitle(content, "Mapeo de mando");
+        addCaption(content, "Mapeo SDL GameController usado por REDRIVER2.");
+
+        LinkedHashMap<String, Spinner> spinners = new LinkedHashMap<>();
+        for (String[] action : AndroidConfig.CONTROLLER_ACTIONS) {
+            String key = action[0];
+            String label = action[1];
+            String value = config.controllerMappings.get(key);
+            int selected = indexOf(AndroidConfig.CONTROLLER_VALUES, value);
+            Spinner spinner = addSpinner(content, label, AndroidConfig.CONTROLLER_VALUES, selected < 0 ? 0 : selected);
+            spinners.put(key, spinner);
+        }
+
+        Button saveButton = addButton(content, "Guardar y volver");
+        saveButton.setOnClickListener(v -> {
+            for (Map.Entry<String, Spinner> entry : spinners.entrySet()) {
+                config.controllerMappings.put(entry.getKey(), (String) entry.getValue().getSelectedItem());
+            }
+            try {
+                config.save(this);
+                showOptionsUi();
+            } catch (IOException ex) {
+                Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+
+        Button backButton = addButton(content, "Volver sin guardar");
+        backButton.setOnClickListener(v -> showOptionsUi());
+
+        setContentView(wrapInScrollView(content));
+    }
+
     private void showImportUi() {
-        layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setGravity(Gravity.CENTER);
-        layout.setPadding(48, 48, 48, 48);
-        layout.setBackgroundColor(0xff111111);
+        currentScreen = SCREEN_IMPORT;
+        LinearLayout content = createContentLayout(false);
+        addTitle(content, "Importar datos");
 
-        status = new TextView(this);
-        status.setTextColor(0xffffffff);
-        status.setTextSize(18);
-        status.setGravity(Gravity.CENTER);
-        status.setText("Importa la carpeta DRIVER2 para jugar con mando.");
+        importStatus = addCaption(content, "Selecciona la carpeta DRIVER2 o una carpeta que la contenga.");
+        importProgress = new ProgressBar(this);
+        importProgress.setIndeterminate(true);
+        importProgress.setVisibility(ProgressBar.GONE);
 
-        progress = new ProgressBar(this);
-        progress.setIndeterminate(true);
-        progress.setVisibility(ProgressBar.GONE);
-
-        importButton = new Button(this);
-        importButton.setText("Importar DRIVER2");
+        importButton = addButton(content, "Importar DRIVER2");
         importButton.setOnClickListener(v -> openTreePicker());
+        content.addView(importProgress);
 
-        LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT);
-        textParams.setMargins(0, 0, 0, 32);
-        layout.addView(status, textParams);
-        layout.addView(importButton);
-        layout.addView(progress);
+        Button backButton = addButton(content, "Volver");
+        backButton.setOnClickListener(v -> showMainMenu());
 
-        setContentView(layout);
+        setContentView(wrapInScrollView(content));
     }
 
     private void openTreePicker() {
@@ -128,9 +289,8 @@ public class LauncherActivity extends Activity {
                 }
 
                 copyDocumentTree(treeUri, driver2DocumentId, target);
-                writeConfig();
-
-                mainHandler.post(this::startGame);
+                AndroidConfig.load(this).save(this);
+                mainHandler.post(this::showMainMenu);
             } catch (Exception ex) {
                 mainHandler.post(() -> {
                     setBusy(false, ex.getMessage());
@@ -141,9 +301,15 @@ public class LauncherActivity extends Activity {
     }
 
     private void setBusy(boolean busy, String message) {
-        status.setText(message);
-        progress.setVisibility(busy ? ProgressBar.VISIBLE : ProgressBar.GONE);
-        importButton.setEnabled(!busy);
+        if (importStatus != null) {
+            importStatus.setText(message);
+        }
+        if (importProgress != null) {
+            importProgress.setVisibility(busy ? ProgressBar.VISIBLE : ProgressBar.GONE);
+        }
+        if (importButton != null) {
+            importButton.setEnabled(!busy);
+        }
     }
 
     private String resolveDriver2DocumentId(Uri treeUri) {
@@ -240,40 +406,6 @@ public class LauncherActivity extends Activity {
         }
     }
 
-    private void writeConfig() throws IOException {
-        File root = GamePaths.root(this);
-        File profile = GamePaths.profile(this);
-        if (!root.mkdirs() && !root.isDirectory()) {
-            throw new IOException("No se pudo crear " + root);
-        }
-        if (!profile.mkdirs() && !profile.isDirectory()) {
-            throw new IOException("No se pudo crear " + profile);
-        }
-
-        String dataFolder = GamePaths.driver2Data(this).getAbsolutePath().replace('\\', '/') + "/";
-        String config = String.format(Locale.US,
-            "[fs]\n"
-                + "dataFolder=%s\n\n"
-                + "[pad]\n"
-                + "pad1device=-1\n"
-                + "pad2device=-1\n\n"
-                + "[render]\n"
-                + "windowWidth=1280\n"
-                + "windowHeight=720\n"
-                + "fullscreen=1\n"
-                + "vsync=1\n"
-                + "pgxpTextureMapping=1\n"
-                + "pgxpZbuffer=1\n"
-                + "bilinearFiltering=0\n\n"
-                + "[game]\n"
-                + "drawDistance=600\n"
-                + "fastLoadingScreens=1\n"
-                + "languageId=0\n"
-                + "unlockAll=1\n",
-            dataFolder);
-        java.nio.file.Files.write(GamePaths.config(this).toPath(), config.getBytes(StandardCharsets.UTF_8));
-    }
-
     private void deleteRecursively(File file) throws IOException {
         if (!file.exists()) {
             return;
@@ -292,8 +424,154 @@ public class LauncherActivity extends Activity {
     }
 
     private void startGame() {
-        Intent intent = new Intent(this, GameActivity.class);
-        startActivity(intent);
-        finish();
+        startActivity(new Intent(this, GameActivity.class));
+    }
+
+    private LinearLayout createContentLayout(boolean alignTop) {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setGravity(alignTop ? Gravity.CENTER_HORIZONTAL : Gravity.CENTER);
+        layout.setPadding(48, 48, 48, 48);
+        layout.setBackgroundColor(COLOR_BACKGROUND);
+        return layout;
+    }
+
+    private ScrollView wrapInScrollView(LinearLayout content) {
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.addView(content, new ScrollView.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT));
+        return scroll;
+    }
+
+    private void addTitle(LinearLayout layout, String text) {
+        TextView title = new TextView(this);
+        title.setText(text);
+        title.setTextColor(COLOR_TEXT);
+        title.setTextSize(28);
+        title.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams params = matchWrap();
+        params.setMargins(0, 0, 0, 24);
+        layout.addView(title, params);
+    }
+
+    private TextView addCaption(LinearLayout layout, String text) {
+        TextView caption = new TextView(this);
+        caption.setText(text);
+        caption.setTextColor(COLOR_MUTED);
+        caption.setTextSize(16);
+        caption.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams params = matchWrap();
+        params.setMargins(0, 0, 0, 24);
+        layout.addView(caption, params);
+        return caption;
+    }
+
+    private void addSectionTitle(LinearLayout layout, String text) {
+        TextView title = new TextView(this);
+        title.setText(text);
+        title.setTextColor(COLOR_TEXT);
+        title.setTextSize(20);
+        LinearLayout.LayoutParams params = matchWrap();
+        params.setMargins(0, 24, 0, 12);
+        layout.addView(title, params);
+    }
+
+    private Button addButton(LinearLayout layout, String text) {
+        Button button = new Button(this);
+        button.setText(text);
+        button.setFocusable(true);
+        button.setFocusableInTouchMode(true);
+        LinearLayout.LayoutParams params = matchWrap();
+        params.setMargins(0, 8, 0, 8);
+        layout.addView(button, params);
+        return button;
+    }
+
+    private CheckBox addCheckBox(LinearLayout layout, String text, boolean checked) {
+        CheckBox checkBox = new CheckBox(this);
+        checkBox.setText(text);
+        checkBox.setTextColor(COLOR_TEXT);
+        checkBox.setChecked(checked);
+        layout.addView(checkBox, matchWrap());
+        return checkBox;
+    }
+
+    private EditText addNumberInput(LinearLayout layout, String label, int value) {
+        addFieldLabel(layout, label);
+        EditText input = new EditText(this);
+        input.setText(String.valueOf(value));
+        input.setTextColor(COLOR_TEXT);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        LinearLayout.LayoutParams params = matchWrap();
+        params.setMargins(0, 0, 0, 8);
+        layout.addView(input, params);
+        return input;
+    }
+
+    private Spinner addSpinner(LinearLayout layout, String label, String[] values, int selected) {
+        addFieldLabel(layout, label);
+        Spinner spinner = new Spinner(this);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+            android.R.layout.simple_spinner_item, values);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(clamp(selected, 0, values.length - 1));
+        LinearLayout.LayoutParams params = matchWrap();
+        params.setMargins(0, 0, 0, 8);
+        layout.addView(spinner, params);
+        return spinner;
+    }
+
+    private void addFieldLabel(LinearLayout layout, String label) {
+        TextView view = new TextView(this);
+        view.setText(label);
+        view.setTextColor(COLOR_MUTED);
+        view.setTextSize(14);
+        layout.addView(view, matchWrap());
+    }
+
+    private LinearLayout.LayoutParams matchWrap() {
+        return new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT);
+    }
+
+    private int parseBoundedInt(EditText input, int min, int max, String label) {
+        String raw = input.getText().toString().trim();
+        if (raw.isEmpty()) {
+            throw new IllegalArgumentException(label + " no puede estar vacio.");
+        }
+        int value;
+        try {
+            value = Integer.parseInt(raw);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(label + " debe ser numerico.");
+        }
+        if (value < min || value > max) {
+            throw new IllegalArgumentException(label + " debe estar entre " + min + " y " + max + ".");
+        }
+        return value;
+    }
+
+    private int bool(CheckBox checkBox) {
+        return checkBox.isChecked() ? 1 : 0;
+    }
+
+    private int indexOf(String[] values, String needle) {
+        if (needle == null) {
+            return -1;
+        }
+        for (int i = 0; i < values.length; i++) {
+            if (needle.equals(values[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 }
