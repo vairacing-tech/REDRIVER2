@@ -146,7 +146,7 @@ public class LauncherActivity extends Activity {
         CheckBox dynamicLights = addCheckBox(content, "Luces dinamicas", config.dynamicLights != 0);
         EditText fieldOfView = addNumberInput(content, "Campo de vision", config.fieldOfView);
         EditText drawDistance = addNumberInput(content, "Distancia de dibujado", config.drawDistance);
-        Spinner language = addSpinner(content, "Idioma", AndroidConfig.LANGUAGE_NAMES, clamp(config.languageId, 0, 4));
+        Spinner language = addSpinner(content, "Idioma del juego", AndroidConfig.LANGUAGE_NAMES, clamp(config.languageId, 0, 4));
 
         addSectionTitle(content, "Controles");
         Button controllerButton = addButton(content, "Mapeo de mando");
