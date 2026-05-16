@@ -2,6 +2,22 @@ plugins {
     id("com.android.application")
 }
 
+val releaseSigningFile = file("${System.getProperty("user.home")}/.android/redriver2-release-signing.txt")
+val releaseSigning = if (releaseSigningFile.isFile) {
+    releaseSigningFile.readLines()
+        .mapNotNull { line ->
+            val separator = line.indexOf('=')
+            if (separator <= 0) {
+                null
+            } else {
+                line.substring(0, separator) to line.substring(separator + 1)
+            }
+        }
+        .toMap()
+} else {
+    emptyMap()
+}
+
 android {
     namespace = "tech.vairacing.redriver2"
     compileSdk = 36
@@ -46,6 +62,25 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
+        }
+    }
+
+    signingConfigs {
+        if (releaseSigningFile.isFile) {
+            create("release") {
+                storeFile = file(releaseSigning.getValue("keystore"))
+                storePassword = releaseSigning.getValue("storePassword")
+                keyAlias = releaseSigning.getValue("alias")
+                keyPassword = releaseSigning.getValue("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        if (releaseSigningFile.isFile) {
+            getByName("release") {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }

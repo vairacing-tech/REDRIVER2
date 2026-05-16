@@ -17,7 +17,7 @@ final class AndroidConfig {
     static final int MAX_FIELD_OF_VIEW = 384;
 
     static final String[] LANGUAGE_NAMES = {
-        "English", "Italiano", "Deutsch", "Francais", "Espanol"
+        "English", "Italiano", "Deutsch", "Français", "Español"
     };
 
     static final String[][] CONTROLLER_ACTIONS = {

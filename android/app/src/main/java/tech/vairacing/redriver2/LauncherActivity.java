@@ -51,6 +51,7 @@ public class LauncherActivity extends Activity {
     private Spinner importStorage;
     private GamePaths.StorageLocation[] importStorageLocations;
     private int currentScreen = SCREEN_MAIN;
+    private int uiLanguageId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,25 +90,36 @@ public class LauncherActivity extends Activity {
 
     private void showMainMenu() {
         currentScreen = SCREEN_MAIN;
+        uiLanguageId = loadUiLanguageId();
         LinearLayout content = createContentLayout(false);
         addTitle(content, "REDRIVER2");
         addCaption(content, GamePaths.isInstalled(this)
-            ? "Datos instalados. Preparado para arrancar."
-            : "Importa la carpeta DRIVER2 antes de iniciar el juego.");
+            ? tr("Game data installed. Ready to start.",
+                "Dati di gioco installati. Pronto per l'avvio.",
+                "Spieldaten installiert. Bereit zum Start.",
+                "Données du jeu installées. Prêt à démarrer.",
+                "Datos instalados. Preparado para arrancar.")
+            : tr("Import the DRIVER2 folder before starting the game.",
+                "Importa la cartella DRIVER2 prima di avviare il gioco.",
+                "Importiere den Ordner DRIVER2, bevor du das Spiel startest.",
+                "Importez le dossier DRIVER2 avant de lancer le jeu.",
+                "Importa la carpeta DRIVER2 antes de iniciar el juego."));
 
-        Button startButton = addButton(content, "Iniciar juego");
+        Button startButton = addButton(content, tr("Start game", "Avvia gioco", "Spiel starten", "Démarrer le jeu", "Iniciar juego"));
         startButton.setEnabled(GamePaths.isInstalled(this));
         startButton.setOnClickListener(v -> startGame());
         startButton.requestFocus();
 
-        Button optionsButton = addButton(content, "Opciones");
+        Button optionsButton = addButton(content, tr("Options", "Opzioni", "Optionen", "Options", "Opciones"));
         optionsButton.setOnClickListener(v -> showOptionsUi());
 
         Button importDataButton = addButton(content,
-            GamePaths.isInstalled(this) ? "Datos del juego" : "Importar DRIVER2");
+            GamePaths.isInstalled(this)
+                ? tr("Game data", "Dati di gioco", "Spieldaten", "Données du jeu", "Datos del juego")
+                : tr("Import DRIVER2", "Importa DRIVER2", "DRIVER2 importieren", "Importer DRIVER2", "Importar DRIVER2"));
         importDataButton.setOnClickListener(v -> showImportUi());
 
-        Button exitButton = addButton(content, "Salir");
+        Button exitButton = addButton(content, tr("Exit", "Esci", "Beenden", "Quitter", "Salir"));
         exitButton.setOnClickListener(v -> finishAffinity());
 
         setContentView(wrapInScrollView(content));
@@ -123,47 +135,55 @@ public class LauncherActivity extends Activity {
             showMainMenu();
             return;
         }
+        uiLanguageId = clamp(config.languageId, 0, 4);
 
         LinearLayout content = createContentLayout(true);
-        addTitle(content, "Opciones");
+        addTitle(content, tr("Options", "Opzioni", "Optionen", "Options", "Opciones"));
 
-        addSectionTitle(content, "Graficos");
+        addSectionTitle(content, tr("Graphics", "Grafica", "Grafik", "Graphismes", "Gráficos"));
         int[][] resolutionChoices = buildResolutionChoices(config.windowWidth, config.windowHeight);
-        Spinner resolution = addSpinner(content, "Resolucion", resolutionLabels(resolutionChoices),
+        Spinner resolution = addSpinner(content, tr("Resolution", "Risoluzione", "Auflösung", "Résolution", "Resolución"), resolutionLabels(resolutionChoices),
             resolutionIndexOf(resolutionChoices, config.windowWidth, config.windowHeight));
-        CheckBox nativeResolution = addCheckBox(content, "Usar resolucion nativa en pantalla completa",
+        CheckBox nativeResolution = addCheckBox(content, tr("Use native fullscreen resolution",
+                "Usa la risoluzione nativa a schermo intero",
+                "Native Vollbildauflösung verwenden",
+                "Utiliser la résolution native en plein écran",
+                "Usar resolución nativa en pantalla completa"),
             config.screenWidth == 0 && config.screenHeight == 0);
-        CheckBox fullscreen = addCheckBox(content, "Ejecutar en pantalla completa", config.fullscreen != 0);
-        CheckBox textureFiltering = addCheckBox(content, "Filtrado de texturas", config.bilinearFiltering != 0);
-        CheckBox perspectiveTexturing = addCheckBox(content, "Texturas con perspectiva", config.pgxpTextureMapping != 0);
+        CheckBox fullscreen = addCheckBox(content, tr("Run in fullscreen", "Esegui a schermo intero", "Im Vollbild ausführen", "Exécuter en plein écran", "Ejecutar en pantalla completa"), config.fullscreen != 0);
+        CheckBox textureFiltering = addCheckBox(content, tr("Texture filtering", "Filtraggio texture", "Texturfilterung", "Filtrage des textures", "Filtrado de texturas"), config.bilinearFiltering != 0);
+        CheckBox perspectiveTexturing = addCheckBox(content, tr("Perspective-correct textures", "Texture con prospettiva", "Perspektivisch korrekte Texturen", "Textures corrigées en perspective", "Texturas con perspectiva"), config.pgxpTextureMapping != 0);
         CheckBox zBuffer = addCheckBox(content, "Z-buffer", config.pgxpZbuffer != 0);
-        CheckBox widescreenOverlays = addCheckBox(content, "Overlays panoramicos", config.widescreenOverlays != 0);
+        CheckBox widescreenOverlays = addCheckBox(content, tr("Widescreen overlays", "Overlay panoramici", "Breitbild-Overlays", "Overlays panoramiques", "Overlays panorámicos"), config.widescreenOverlays != 0);
         CheckBox vsync = addCheckBox(content, "VSync", config.vsync != 0);
 
-        addSectionTitle(content, "Gameplay");
-        CheckBox fastLoading = addCheckBox(content, "Pantallas de carga rapidas", config.fastLoadingScreens != 0);
-        CheckBox disableBridges = addCheckBox(content, "Desactivar puentes de Chicago", config.disableChicagoBridges != 0);
-        CheckBox dynamicLights = addCheckBox(content, "Luces dinamicas", config.dynamicLights != 0);
-        CheckBox unlockAll = addCheckBox(content, "Desbloquear todo el contenido jugable", config.unlockAll != 0);
+        addSectionTitle(content, tr("Gameplay", "Gameplay", "Gameplay", "Gameplay", "Gameplay"));
+        CheckBox fastLoading = addCheckBox(content, tr("Fast loading screens", "Schermate di caricamento rapide", "Schnelle Ladebildschirme", "Écrans de chargement rapides", "Pantallas de carga rápidas"), config.fastLoadingScreens != 0);
+        CheckBox disableBridges = addCheckBox(content, tr("Disable Chicago bridges", "Disattiva i ponti di Chicago", "Chicago-Brücken deaktivieren", "Désactiver les ponts de Chicago", "Desactivar puentes de Chicago"), config.disableChicagoBridges != 0);
+        CheckBox dynamicLights = addCheckBox(content, tr("Dynamic lights", "Luci dinamiche", "Dynamische Lichter", "Lumières dynamiques", "Luces dinámicas"), config.dynamicLights != 0);
+        CheckBox unlockAll = addCheckBox(content, tr("Unlock all playable content", "Sblocca tutti i contenuti giocabili", "Alle spielbaren Inhalte freischalten", "Débloquer tout le contenu jouable", "Desbloquear todo el contenido jugable"), config.unlockAll != 0);
+        CheckBox freeCamera = addCheckBox(content, tr("Free camera", "Telecamera libera", "Freie Kamera", "Caméra libre", "Cámara libre"), config.freeCamera != 0);
+        CheckBox driver1Music = addCheckBox(content, tr("Driver 1 music", "Musica di Driver 1", "Driver-1-Musik", "Musique de Driver 1", "Música de Driver 1"), config.driver1music != 0);
+        CheckBox overrideContent = addCheckBox(content, tr("Enable content overrides", "Abilita contenuti sostitutivi", "Inhalts-Overrides aktivieren", "Activer les remplacements de contenu", "Activar reemplazos de contenido"), config.overrideContent != 0);
         int fieldOfViewValue = clamp(config.fieldOfView,
             AndroidConfig.MIN_FIELD_OF_VIEW, AndroidConfig.MAX_FIELD_OF_VIEW);
         int[] fieldOfViewChoices = buildNumberChoices(fieldOfViewValue,
             128, 160, 192, 224, 256, 288, 320, 352, 384);
-        Spinner fieldOfView = addSpinner(content, "Campo de vision", numberLabels(fieldOfViewChoices),
+        Spinner fieldOfView = addSpinner(content, tr("Field of view", "Campo visivo", "Sichtfeld", "Champ de vision", "Campo de visión"), numberLabels(fieldOfViewChoices),
             numberIndexOf(fieldOfViewChoices, fieldOfViewValue));
         int drawDistanceValue = clamp(config.drawDistance,
             AndroidConfig.MIN_DRAW_DISTANCE, AndroidConfig.MAX_DRAW_DISTANCE);
         int[] drawDistanceChoices = buildNumberChoices(drawDistanceValue,
             441, 600, 900, 1200, 1500, 1800);
-        Spinner drawDistance = addSpinner(content, "Distancia de dibujado", numberLabels(drawDistanceChoices),
+        Spinner drawDistance = addSpinner(content, tr("Draw distance", "Distanza visiva", "Sichtweite", "Distance d'affichage", "Distancia de dibujado"), numberLabels(drawDistanceChoices),
             numberIndexOf(drawDistanceChoices, drawDistanceValue));
-        Spinner language = addSpinner(content, "Idioma del juego", AndroidConfig.LANGUAGE_NAMES, clamp(config.languageId, 0, 4));
+        Spinner language = addSpinner(content, tr("Game language", "Lingua del gioco", "Spielsprache", "Langue du jeu", "Idioma del juego"), AndroidConfig.LANGUAGE_NAMES, clamp(config.languageId, 0, 4));
 
-        addSectionTitle(content, "Controles");
-        Button controllerButton = addButton(content, "Mapeo de mando");
+        addSectionTitle(content, tr("Controls", "Controlli", "Steuerung", "Commandes", "Controles"));
+        Button controllerButton = addButton(content, tr("Controller mapping", "Mappatura controller", "Controller-Belegung", "Configuration de la manette", "Mapeo de mando"));
         controllerButton.setOnClickListener(v -> showControllerMappingUi(config));
 
-        Button saveButton = addButton(content, "Guardar y volver");
+        Button saveButton = addButton(content, tr("Save and return", "Salva e torna indietro", "Speichern und zurück", "Enregistrer et revenir", "Guardar y volver"));
         saveButton.setOnClickListener(v -> {
             try {
                 int[] selectedResolution = resolutionChoices[resolution.getSelectedItemPosition()];
@@ -181,17 +201,20 @@ public class LauncherActivity extends Activity {
                 config.disableChicagoBridges = bool(disableBridges);
                 config.dynamicLights = bool(dynamicLights);
                 config.unlockAll = bool(unlockAll);
+                config.freeCamera = bool(freeCamera);
+                config.driver1music = bool(driver1Music);
+                config.overrideContent = bool(overrideContent);
                 config.fieldOfView = fieldOfViewChoices[fieldOfView.getSelectedItemPosition()];
                 config.drawDistance = drawDistanceChoices[drawDistance.getSelectedItemPosition()];
                 config.languageId = language.getSelectedItemPosition();
                 config.save(this);
-                showMainMenu();
+                recreate();
             } catch (IOException | IllegalArgumentException ex) {
                 Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
 
-        Button backButton = addButton(content, "Volver sin guardar");
+        Button backButton = addButton(content, tr("Return without saving", "Torna senza salvare", "Ohne Speichern zurück", "Revenir sans enregistrer", "Volver sin guardar"));
         backButton.setOnClickListener(v -> showMainMenu());
 
         CompoundButton.OnCheckedChangeListener resolutionListener = (buttonView, isChecked) -> {
@@ -206,8 +229,12 @@ public class LauncherActivity extends Activity {
     private void showControllerMappingUi(AndroidConfig config) {
         currentScreen = SCREEN_CONTROLLER;
         LinearLayout content = createContentLayout(true);
-        addTitle(content, "Mapeo de mando");
-        addCaption(content, "Mapeo SDL GameController usado por REDRIVER2.");
+        addTitle(content, tr("Controller mapping", "Mappatura controller", "Controller-Belegung", "Configuration de la manette", "Mapeo de mando"));
+        addCaption(content, tr("SDL GameController mapping used by REDRIVER2.",
+            "Mappatura SDL GameController usata da REDRIVER2.",
+            "Von REDRIVER2 verwendete SDL-GameController-Belegung.",
+            "Configuration SDL GameController utilisée par REDRIVER2.",
+            "Mapeo SDL GameController usado por REDRIVER2."));
 
         LinkedHashMap<String, Spinner> spinners = new LinkedHashMap<>();
         for (String[] action : AndroidConfig.CONTROLLER_ACTIONS) {
@@ -219,7 +246,7 @@ public class LauncherActivity extends Activity {
             spinners.put(key, spinner);
         }
 
-        Button saveButton = addButton(content, "Guardar y volver");
+        Button saveButton = addButton(content, tr("Save and return", "Salva e torna indietro", "Speichern und zurück", "Enregistrer et revenir", "Guardar y volver"));
         saveButton.setOnClickListener(v -> {
             for (Map.Entry<String, Spinner> entry : spinners.entrySet()) {
                 config.controllerMappings.put(entry.getKey(), (String) entry.getValue().getSelectedItem());
@@ -232,7 +259,7 @@ public class LauncherActivity extends Activity {
             }
         });
 
-        Button backButton = addButton(content, "Volver sin guardar");
+        Button backButton = addButton(content, tr("Return without saving", "Torna senza salvare", "Ohne Speichern zurück", "Revenir sans enregistrer", "Volver sin guardar"));
         backButton.setOnClickListener(v -> showOptionsUi());
 
         setContentView(wrapInScrollView(content));
@@ -241,26 +268,35 @@ public class LauncherActivity extends Activity {
     private void showImportUi() {
         currentScreen = SCREEN_IMPORT;
         LinearLayout content = createContentLayout(false);
-        addTitle(content, "Importar datos");
+        addTitle(content, tr("Import data", "Importa dati", "Daten importieren", "Importer les données", "Importar datos"));
 
         importStatus = addCaption(content, GamePaths.isInstalled(this)
-            ? "Datos instalados en " + GamePaths.currentStorageLabel(this) + "."
-            : "Selecciona la carpeta DRIVER2 o una carpeta que la contenga.");
+            ? tr("Data installed in ", "Dati installati in ", "Daten installiert in ", "Données installées dans ", "Datos instalados en ")
+                + GamePaths.currentStorageLabel(this) + "."
+            : tr("Select the DRIVER2 folder or a folder that contains it.",
+                "Seleziona la cartella DRIVER2 o una cartella che la contiene.",
+                "Wähle den Ordner DRIVER2 oder einen Ordner, der ihn enthält.",
+                "Sélectionnez le dossier DRIVER2 ou un dossier qui le contient.",
+                "Selecciona la carpeta DRIVER2 o una carpeta que la contenga."));
         importStorageLocations = GamePaths.availableStorageLocations(this);
-        importStorage = addSpinner(content, "Destino", storageLabels(importStorageLocations),
+        importStorage = addSpinner(content, tr("Destination", "Destinazione", "Ziel", "Destination", "Destino"), storageLabels(importStorageLocations),
             storageIndexOf(importStorageLocations, GamePaths.getDataStorageId(this)));
         if (!GamePaths.hasRemovableStorage(this)) {
-            addCaption(content, "No se ha detectado una tarjeta SD disponible.");
+            addCaption(content, tr("No available SD card was detected.",
+                "Nessuna scheda SD disponibile rilevata.",
+                "Keine verfügbare SD-Karte erkannt.",
+                "Aucune carte SD disponible détectée.",
+                "No se ha detectado una tarjeta SD disponible."));
         }
         importProgress = new ProgressBar(this);
         importProgress.setIndeterminate(true);
         importProgress.setVisibility(ProgressBar.GONE);
 
-        importButton = addButton(content, "Importar DRIVER2");
+        importButton = addButton(content, tr("Import DRIVER2", "Importa DRIVER2", "DRIVER2 importieren", "Importer DRIVER2", "Importar DRIVER2"));
         importButton.setOnClickListener(v -> openTreePicker());
         content.addView(importProgress);
 
-        Button backButton = addButton(content, "Volver");
+        Button backButton = addButton(content, tr("Return", "Indietro", "Zurück", "Retour", "Volver"));
         backButton.setOnClickListener(v -> showMainMenu());
 
         setContentView(wrapInScrollView(content));
@@ -453,6 +489,29 @@ public class LauncherActivity extends Activity {
 
     private void startGame() {
         startActivity(new Intent(this, GameActivity.class));
+    }
+
+    private int loadUiLanguageId() {
+        try {
+            return clamp(AndroidConfig.load(this).languageId, 0, 4);
+        } catch (IOException ignored) {
+            return 0;
+        }
+    }
+
+    private String tr(String english, String italian, String german, String french, String spanish) {
+        switch (uiLanguageId) {
+            case 1:
+                return italian;
+            case 2:
+                return german;
+            case 3:
+                return french;
+            case 4:
+                return spanish;
+            default:
+                return english;
+        }
     }
 
     private LinearLayout createContentLayout(boolean alignTop) {

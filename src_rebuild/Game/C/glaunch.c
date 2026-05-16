@@ -125,8 +125,26 @@ int gSubGameNumber = 0;
 
 int gMissionLadderPos = 0;
 int gFurthestMission = 0;
+int gUnlockAllContent = 0;
 
 int gWantNight = 0;
+
+void ApplyUnlockAllContent(void)
+{
+	if (!gUnlockAllContent)
+		return;
+
+	gFurthestMission = 40;
+	AvailableCheats.cheat5 = 1;
+	AvailableCheats.cheat6 = 1;
+	AvailableCheats.cheat7 = 1;
+	AvailableCheats.cheat8 = 1;
+	AvailableCheats.cheat2 = 1;
+	AvailableCheats.cheat11 = 1;
+	AvailableCheats.cheat1 = 1;
+	AvailableCheats.cheat3 = 1;
+	AvailableCheats.cheat4 = 1;
+}
 
 int gOldVibrationMode;
 int gSurvivalCopSettingsBackup;

@@ -491,6 +491,7 @@ int LoadConfigData(char* buffer)
 	Pads[1].mappings = header->PadMapping[1];
 
 	ScoreTables = header->ScoreTables;
+	ApplyUnlockAllContent();
 
 	return 1;
 }

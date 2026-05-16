@@ -611,24 +611,8 @@ int main(int argc, char** argv)
 			}
 		}
 
-#if defined(DEBUG_OPTIONS)
-		int unlockAll = 0;
-		ini_sget(config, "game", "unlockAll", "%d", &unlockAll);
-
-		if (unlockAll)
-		{
-			gFurthestMission = 40;
-			AvailableCheats.cheat5 = 1;
-			AvailableCheats.cheat6 = 1;
-			AvailableCheats.cheat7 = 1;
-			AvailableCheats.cheat8 = 1;
-			AvailableCheats.cheat2 = 1;
-			AvailableCheats.cheat11 = 1;
-			AvailableCheats.cheat1 = 1;
-			AvailableCheats.cheat3 = 1;
-			AvailableCheats.cheat4 = 1;
-		}
-#endif
+			ini_sget(config, "game", "unlockAll", "%d", &gUnlockAllContent);
+			ApplyUnlockAllContent();
 	}
 #if defined(DEBUG_OPTIONS) || defined(_DEBUG)
 	g_dbg_gameDebugKeys = GameDebugKeys;

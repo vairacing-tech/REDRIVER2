@@ -14,6 +14,7 @@ extern int gHaveStoredData;
 
 extern int gMissionLadderPos;
 extern int gFurthestMission;
+extern int gUnlockAllContent;
 extern int gWantNight;
 
 extern int lead_car;
@@ -50,6 +51,7 @@ extern void GetRandomChase(); // 0x000535D8
 extern int FindPrevMissionFromLadderPos(int pos); // 0x000536D8
 
 extern int FindMissionLadderPos(int mission); // 0x00053740
+extern void ApplyUnlockAllContent(void);
 
 
 #endif
